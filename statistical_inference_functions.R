@@ -1,4 +1,5 @@
 # Copyright 2021 Tomàs Montserrat Ayuso
+
 # Useful statistical inference functions
 
 # Function to calculate a confidence interval using a z-critical value
