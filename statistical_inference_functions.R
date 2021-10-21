@@ -1,5 +1,5 @@
 # Copyright 2021 Tomàs Montserrat Ayuso
-# Useful statistical inference functions
+# USEFUL STATISTICAL INFERENCE FUNCTIONS
 
 # Function to calculate a standard error
 calculate_standard_error <- function(sd, sample.size) {
