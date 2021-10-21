@@ -1,6 +1,10 @@
 # Copyright 2021 Tomàs Montserrat Ayuso
-
 # Useful statistical inference functions
+
+# Function to calculate a standard error
+calculate_standard_error <- function(sd, sample.size) {
+  return(sigma/sqrt(sample_size))
+}
 
 # Function to calculate a confidence interval using a z-critical value
 create_conf_interval_normal <- function(mean.sample, sd, sample.size, percent) {
@@ -36,6 +40,7 @@ create_conf_interval_student <- function(mean.sample, sd, sample.size,
   }
 }
 
+# Function to calculate a confidence interval using a z-critical value
 calculate_margin_error_normal <- function(sd, sample.size, 
                                           percent) {
   critical.z <- qnorm(percent/100 + (1-(percent/100))/2)
