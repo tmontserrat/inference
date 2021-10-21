@@ -1,38 +1,70 @@
+# Copyright 2021 Tomàs Montserrat Ayuso
 # Useful statistical inference functions
-# One-sample
+
 # Function to calculate a confidence interval using a z-critical value
-create_conf_interval_normal <- function(mean.sample, sd.sample, sample.size, percent) {
+create_conf_interval_normal <- function(mean.sample, sd, sample.size, percent) {
   critical.z <- qnorm(percent/100 + (1-(percent/100))/2)
-  lwr.bound <- mean.sample-(critical.z*(sd.sample/sqrt(sample.size)))
-  upr.bound <- mean.sample+(critical.z*(sd.sample/sqrt(sample.size)))
+  lwr.bound <- mean.sample-(critical.z*(sd/sqrt(sample.size)))
+  upr.bound <- mean.sample+(critical.z*(sd/sqrt(sample.size)))
   return(c(lwr.bound, upr.bound))
 }
 
 # Function to calculate a confidence interval using a t-critical value
-create_conf_interval_student <- function(mean.sample, sd.sample, sample.size, 
+create_conf_interval_student <- function(mean.sample, sd, sample.size, 
                                          percent, alternative="two.sided") {
   if (alternative=="two.sided") {
     df <- sample.size - 1
     critical.t <- qt(percent/100 + (1-(percent/100))/2, df)
-    lwr.bound <- mean.sample-(critical.t*(sd.sample/sqrt(sample.size)))
-    upr.bound <- mean.sample+(critical.t*(sd.sample/sqrt(sample.size)))
+    lwr.bound <- mean.sample-(critical.t*(sd/sqrt(sample.size)))
+    upr.bound <- mean.sample+(critical.t*(sd/sqrt(sample.size)))
     return(c(lwr.bound, upr.bound))
   }
   else if (alternative=="lower.one.sided") {
     df <- sample.size - 1
     critical.t <- qt(percent/100, df)
-    lwr.bound <- mean.sample-(critical.t*(sd.sample/sqrt(sample.size)))
-    upr.bound <- mean.sample+(critical.t*(sd.sample/sqrt(sample.size)))
+    lwr.bound <- mean.sample-(critical.t*(sd/sqrt(sample.size)))
+    upr.bound <- mean.sample+(critical.t*(sd/sqrt(sample.size)))
     return(c(Inf, upr.bound))
   }
   else if (alternative=="upper.one.sided") {
     df <- sample.size - 1
     critical.t <- qt(percent/100, df)
-    lwr.bound <- mean.sample-(critical.t*(sd.sample/sqrt(sample.size)))
-    upr.bound <- mean.sample+(critical.t*(sd.sample/sqrt(sample.size)))
+    lwr.bound <- mean.sample-(critical.t*(sd/sqrt(sample.size)))
+    upr.bound <- mean.sample+(critical.t*(sd/sqrt(sample.size)))
     return(c(lwr.bound, Inf))
   }
-  
+}
+
+calculate_margin_error_normal <- function(sd, sample.size, 
+                                          percent) {
+  critical.z <- qnorm(percent/100 + (1-(percent/100))/2)
+  margin_error <- critical.z*(sd/sqrt(sample.size))
+  return(margin_error)
+}
+
+calculate_margin_error_student <- function(sd, sample.size,
+                                          percent) {
+  df <- sample.size - 1
+  critical.t <- qt(percent/100 + (1-(percent/100))/2, df)
+  margin_error <- critical.t*(sd/sqrt(sample.size))
+  return(margin_error)
+}
+
+# Function that calculates the degrees of freedom for two samples
+calculate_df_two_sample <- function(s1, s2, n1, n2) {
+  df.nom <- (((s1^2)/n1) + ((s2^2)/n2))^2
+  df.denom.1 <- (((s1^2)/n1)^2)/(n1-1)
+  df.denom.2 <- (((s2^2)/n2)^2)/(n2-1)
+  return(df.nom / (df.denom.1+df.denom.2))
+}
+
+# Function to calculate a confidence interval using a t-critical value. 
+create_conf_interval_two_sample <- function(x1.bar, x2.bar, s1, s2, n1, n2, percent) {
+  df <- calculate_df_two_sample(s1, s2, n1, n2)
+  critical.t <- qt(percent/100 + (1-(percent/100))/2, df)
+  lwr.bound <- (x1.bar-x2.bar) - (critical.t*(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
+  upr.bound <- (x1.bar-x2.bar) + (critical.t*(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
+  return(c(lwr.bound, upr.bound))
 }
 
 # Function that simulate samples from a given variable from a dataset and return
@@ -107,6 +139,11 @@ check_in_rejection_zone <- function(sample_mean,
 # sample standard deviation and sample size
 t_statistic <- function(sample_mean, population_mean, sd_sample, n){
   return((sample_mean - population_mean)/(sd_sample/sqrt(n)))
+} 
+
+# Return the t statistic given in a independent two-sample test.
+t_statistic_two_samples <- function(x1.bar, x2.bar, s1, s2, n1, n2){
+  return((x1.bar - x2.bar)/(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
 } 
 
 
@@ -210,5 +247,3 @@ student_prob_area_plot <- function(lb_t_st, ub_t_up, df,
              theme_bw())
   }
 }
-
-
