@@ -56,7 +56,7 @@ create_conf_interval <- function(mean.sample, sd=1, sample.size,
     # For proportions
     else if (proportion == TRUE) {
       if (alternative == "two.sided") {
-        conf_interval_two_sided_prop(mean.sample, sample.size, percent)
+        conf_interval_two_sided_prop_normal(mean.sample, sample.size, percent)
       }
       else if (alternative == "lower.one.sided") {
         conf_interval_one_sided_left_normal(mean.sample, sd, sample.size, percent)
@@ -98,12 +98,26 @@ calculate_df_two_sample <- function(s1, s2, n1, n2) {
 }
 
 # Function to calculate a confidence interval using a t-critical value. 
-create_conf_interval_two_sample <- function(x1.bar, x2.bar, s1, s2, n1, n2, percent) {
-  df <- calculate_df_two_sample(s1, s2, n1, n2)
-  critical.t <- qt(percent/100 + (1-(percent/100))/2, df)
-  lwr.bound <- (x1.bar-x2.bar) - (critical.t*(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
-  upr.bound <- (x1.bar-x2.bar) + (critical.t*(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
-  return(c(lwr.bound, upr.bound))
+# Function to calculate a confidence interval for two sample. 
+create_conf_interval_two_sample <- function(x1.bar, x2.bar, s1=1, s2=1, n1, n2, percent, proportions=FALSE) {
+  if (proportions == FALSE) {
+    df <- calculate_df_two_sample(s1, s2, n1, n2)
+    critical.t <- qt(percent/100 + (1-(percent/100))/2, df)
+    se <- sqrt( ((s1^2)/n1) + ((s2^2)/n2))
+    lwr.bound <- (x1.bar-x2.bar) - (critical.t*se)
+    upr.bound <- (x1.bar-x2.bar) + (critical.t*(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
+    return(c(lwr.bound, upr.bound))
+  }
+  else if (proportions == TRUE) {
+    diff <- x1.bar - x2.bar
+    radicand.1 <- (x1.bar*(1-x1.bar))/n1
+    radicand.2 <- (x2.bar*(1-x2.bar))/n2
+    se <- sqrt(radicand.1 + radicand.2)
+    critical.z <- qnorm(percent/100 + (1-(percent/100))/2)
+    lwr.bound <- diff - (critical.z*se)
+    upr.bound <- diff + (critical.z*se)
+    return(c(lwr.bound, upr.bound))
+  }
 }
 
 # Function that simulate samples from a given variable from a dataset and return
@@ -215,6 +229,14 @@ t_statistic <- function(sample_mean, population_mean, sd_sample, n){
 t_statistic_two_samples <- function(x1.bar, x2.bar, s1, s2, n1, n2){
   return((x1.bar - x2.bar)/(sqrt( ((s1^2)/n1) + ((s2^2)/n2)) ))
 } 
+
+# Return z statistic for a one sample proportion.
+z_statistic_one_sample_prop <- function(p.hat, p.zero, alpha) {
+  nom <- p.hat-p.zero
+  denom <- sqrt((p.zero*(1-p.zero))/n)
+  z.star <- nom/denom
+  return(z.star)
+}
 
 
 # Adapted from Ref: https://gist.github.com/jrnold/6799152
