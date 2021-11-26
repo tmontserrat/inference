@@ -120,6 +120,10 @@ create_conf_interval_two_sample <- function(x1.bar, x2.bar, s1=1, s2=1, n1, n2, 
   }
 }
 
+calculate_p_hat_pooled <- function(x1, x2, n1, n2) {
+  return((x1+x2) / (n1+n2))
+}
+
 # Function that simulate samples from a given variable from a dataset and return
 # a table with the proportions of those samples that capture the correct mean
 check_capture_mean <- function(replicates, sample.size, mu, percent, dataset, variable) {
@@ -289,6 +293,55 @@ normal_prob_area_plot <- function(lb, ub, mean = 0, sd = 1,
   }
 }
 
+normal_prob_area_plot_p_val <- function(lb, ub, mean = 0, sd = 1, 
+                                        limits = c(mean - 3 * sd, mean + 3 * sd),
+                                        type = "lower_upper_bounds") {
+  if (type == "lower_upper_bounds") {
+    x <- seq(limits[1], limits[2], length.out = 100)
+    xmin <- max(lb, limits[1])
+    xmax <- min(ub, limits[2])
+    areax1 <- seq(limits[1], xmin, length.out = 100)
+    areax2 <- seq(limits[2], xmax, length.out = 100)
+    area1 <- data.frame(x = areax1, ymin = 0, ymax = dnorm(areax1, mean, sd))
+    area2 <- data.frame(x = areax2, ymin = 0, ymax = dnorm(areax2, mean, sd))
+    return(ggplot()
+           + geom_line(data.frame(x = x, y = dnorm(x, mean, sd)),
+                       mapping = aes(x = x, y = y))
+           + geom_ribbon(data = area1, mapping = aes(x = x, ymin = ymin, ymax = ymax), fill = "dodgerblue", alpha=0.4)
+           + geom_ribbon(data = area2, mapping = aes(x = x, ymin = ymin, ymax = ymax), fill = "dodgerblue", alpha=0.4)
+           + scale_x_continuous(limits = limits) +
+             theme_bw())
+  } else if (type == "lower_bound") {
+    x <- seq(limits[1], limits[2], length.out = 100)
+    xmin <- max(lb, limits[1])
+    xmax <- min(ub, limits[2])
+    areax1 <- seq(limits[1], xmin, length.out = 100)
+    areax2 <- seq(limits[2], xmax, length.out = 100)
+    area1 <- data.frame(x = areax1, ymin = 0, ymax = dnorm(areax1, mean, sd))
+    area2 <- data.frame(x = areax2, ymin = 0, ymax = dnorm(areax2, mean, sd))
+    return(ggplot()
+           + geom_line(data.frame(x = x, y = dnorm(x, mean, sd)),
+                       mapping = aes(x = x, y = y))
+           + geom_ribbon(data = area1, mapping = aes(x = x, ymin = ymin, ymax = ymax), fill = "dodgerblue", alpha=0.4)
+           + scale_x_continuous(limits = limits) +
+             theme_bw())
+  } else if (type == "upper_bound") {
+    x <- seq(limits[1], limits[2], length.out = 100)
+    xmin <- max(lb, limits[1])
+    xmax <- min(ub, limits[2])
+    areax1 <- seq(limits[1], xmin, length.out = 100)
+    areax2 <- seq(limits[2], xmax, length.out = 100)
+    area1 <- data.frame(x = areax1, ymin = 0, ymax = dnorm(areax1, mean, sd))
+    area2 <- data.frame(x = areax2, ymin = 0, ymax = dnorm(areax2, mean, sd))
+    return(ggplot()
+           + geom_line(data.frame(x = x, y = dnorm(x, mean, sd)),
+                       mapping = aes(x = x, y = y))
+           + geom_ribbon(data = area2, mapping = aes(x = x, ymin = ymin, ymax = ymax), fill = "dodgerblue", alpha=0.4)
+           + scale_x_continuous(limits = limits) +
+             theme_bw())
+  }
+}
+
 # Function that generate a t student distribution curve and color
 # the interested area. Useful for visualizing p-values
 student_prob_area_plot <- function(lb_t_st, ub_t_up, df, 
@@ -338,4 +391,41 @@ student_prob_area_plot <- function(lb_t_st, ub_t_up, df,
            + scale_x_continuous(limits = limits) +
              theme_bw())
   }
+}
+
+
+# Useful function to shadow a specific region in a binomial distribution
+bar_plot_binomial_prob <- function(min.prob, 
+                                   max.prob,
+                                   n, 
+                                   prob, 
+                                   x.labels.by=1 , 
+                                   color.success="coral", 
+                                   color.failure="dodgerblue") {
+  # Create data frame
+  df = data.frame(x=0:n, y=dbinom(0:n, n, prob))
+  df$group <- df$x
+  
+  # Create the borders for the shadowed region
+  prob_X <- c(min.prob:max.prob)
+  
+  # Create two groups for each observation
+  df$group[df$x %in% prob_X] = "color"
+  df$group[!(df$x %in% prob_X)] = "no_color"
+  
+  # Create the plot
+  bar_plot_binomial = ggplot(df, aes(x, y, fill = group)) +
+    geom_bar(stat = "identity",
+             col = "black") +
+    scale_fill_manual(values = c("no_color" = "dodgerblue", "color" = "coral"), guide = "none") +
+    labs(
+      x = "X",
+      y = "Probability"
+    ) +
+    scale_x_continuous(breaks = round(seq(min(df$x), 
+                                          max(df$x), 
+                                          by = x.labels.by),1)) +
+    theme_bw()
+  
+  return(bar_plot_binomial)
 }
