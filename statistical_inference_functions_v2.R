@@ -1,4 +1,4 @@
-# Copyright 2021 Tom?s Montserrat Ayuso
+# Copyright 2021 Tomàs Montserrat Ayuso
 # Useful statistical inference functions
 
 # Load helper functions
