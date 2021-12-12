@@ -495,16 +495,22 @@ plot_of_means <- function(dataframe, factor, response, percent=95, labels=c("Fac
 }
 
 compare_means_dot_plot <- function(dataframe, factor, response) {
+  # Extract the differents levels of the factor
   factor_levels <- levels(dataframe[, factor])
+  # Split the dataframe and compute the means by group
   response_split <- split(dataframe[, response], dataframe[, factor])
   response_means <- unlist(lapply(response_split, mean))
+  # Calculate the mean of the response variable ungrouped
   response_mean <- mean(dataframe[, response])
   plot <- ggplot(dataframe, aes_string(factor, response)) + 
+    # Make a dot plot
     geom_point(alpha=0.4) +
+    # Draw a line of the ungrouped mean
     annotate("segment", y = response_mean, 
              yend = response_mean,
              x = 0.5, xend = length(factor_levels)+0.5,
              colour = "red", size=0.5, linetype="dashed")
+  # Draw a small segment for the means of each group
   for (i in 1:length(response_means)) {
     plot <- plot +
       annotate("segment", y = response_means[i], 
