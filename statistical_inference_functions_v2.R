@@ -1,4 +1,4 @@
-# Copyright 2021 Tom√†s Montserrat Ayuso
+# Copyright 2021 Tom?s Montserrat Ayuso
 # Useful statistical inference functions
 
 # Load helper functions
@@ -408,6 +408,20 @@ f_prob_area_plot <- function(f, df1, df2,
            theme_bw())
 }
 
+chi_squared_prob_area_plot <- function(q, df, 
+                                       limits = c(0, df*4)) {
+  x <- seq(limits[1], limits[2], length.out = 1000)
+  xmax <- min(q, limits[2])
+  areax2 <- seq(limits[2], xmax, length.out = 1000)
+  area2 <- data.frame(x = areax2, ymin = 0, ymax = dchisq(areax2, df))
+  return(ggplot()
+         + geom_line(data.frame(x = x, y = dchisq(x, df)),
+                     mapping = aes(x = x, y = y))
+         + geom_ribbon(data = area2, mapping = aes(x = x, ymin = ymin, ymax = ymax), fill = "dodgerblue", alpha=0.4)
+         + scale_x_continuous(limits = limits) +
+           theme_bw())
+}
+
 # Useful function to shadow a specific region in a binomial distribution
 bar_plot_binomial_prob <- function(min.prob, 
                                    max.prob,
@@ -495,32 +509,93 @@ plot_of_means <- function(dataframe, factor, response, percent=95, labels=c("Fac
 }
 
 compare_means_dot_plot <- function(dataframe, factor, response) {
-  # Extract the differents levels of the factor
+  # Retrieve the levels
   factor_levels <- levels(dataframe[, factor])
-  # Split the dataframe and compute the means by group
+  # Split the response variable by the levels
   response_split <- split(dataframe[, response], dataframe[, factor])
+  # Store the grouped means and median in vectors
   response_means <- unlist(lapply(response_split, mean))
-  # Calculate the mean of the response variable ungrouped
+  response_medians <- unlist(lapply(response_split, median))
+  # Store the global mean and medians in vectors
   response_mean <- mean(dataframe[, response])
+  response_median <- median(dataframe[, response])
+  # Generate the visualization
   plot <- ggplot(dataframe, aes_string(factor, response)) + 
-    # Make a dot plot
     geom_point(alpha=0.4) +
-    # Draw a line of the ungrouped mean
     annotate("segment", y = response_mean, 
              yend = response_mean,
              x = 0.5, xend = length(factor_levels)+0.5,
-             colour = "red", size=0.5, linetype="dashed")
-  # Draw a small segment for the means of each group
+             colour = "blue", size=0.5, linetype="dashed") +
+    annotate("segment", y = response_median, 
+             yend = response_median,
+             x = 0.5, xend = length(factor_levels)+0.5,
+             colour = "green", size=0.5, linetype="dashed")
   for (i in 1:length(response_means)) {
     plot <- plot +
       annotate("segment", y = response_means[i], 
                yend = response_means[i],
                x = 0.7+i-1, xend = 1.3+i-1,
-               colour = "blue", size=0.5)
+               colour = "blue", size=0.5) +
+      annotate("segment", y = response_medians[i],
+               yend = response_medians[i],
+               x = 0.7+i-1, xend = 1.3+i-1,
+               colour = "green", size=0.5)
   }
   
   plot <- plot + theme_bw()
   return(plot)
+}
+
+median_conf_int_bootstrap <- function(data, iterations=100, bins=25, percent=95) {
+  alpha <- 1 - (percent/100)
+  medians <- replicate(iterations, {
+    # Creamos una nueva muestra
+    ggt_sample <- sample(data, length(data), replace=TRUE)
+    
+    # Calculamos la mediana
+    ggt_median_sample <- median(ggt_sample)
+  })
+  
+  # Calculamos la desviaciÛn est·ndar de la distribuciÛn de las medianas
+  sd_medians <- sd(medians)
+  
+  # Tomamos los percentiles 25 y 97.5 para calcular el intervalo de confianza
+  conf_interval <- quantile(medians, c(alpha/2, 1-(alpha/2)))
+  
+  # Creamos el histograma de la distribuciÛn
+  medians_df <- data.frame(medians=medians)
+  histogram <- ggplot(medians_df, aes(x=medians)) +
+    geom_histogram(bins=bins, color="black", fill="steelblue") +
+    labs(y="Frequency", x="Medians") +
+    theme_bw()
+  
+  return(list("medians"=medians, 
+              "sd"=sd_medians, 
+              "conf_int"=conf_interval, 
+              "histogram"=histogram))
+}
+
+median_conf_int_conventional <- function(data, percent=95) {
+  # Sample size
+  n <- length(data)
+  
+  # Quantile of interest
+  q <- 0.5
+  
+  # Critical Z
+  z_critico <- calculate_critical_z(percent=percent)
+  
+  # Indices for the confidence interval
+  j <- round(n*q - z_critico*sqrt(n*q*(1-q)))
+  k <- round(n*q + z_critico*sqrt(n*q*(1-q)))
+  
+  # Sort values
+  sorted_data <- sort(data)
+  
+  # Build the confidence interval
+  median_conf_int <- c(sorted_data[j], sorted_data[k])
+  
+  return(median_conf_int)
 }
   
   
